@@ -121,31 +121,14 @@ resource "azurerm_windows_virtual_machine" "vm" {
   }
 }
 
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "linux_auto_shutdown" {
-  for_each = {
-    for entry in local.virtual_machines : entry.vm_name => entry
-    if entry.vm_image_source_type == "Linux"
-  }
-
-  virtual_machine_id    = azurerm_linux_virtual_machine.vm[each.key].id
-  location              = azurerm_linux_virtual_machine.vm[each.key].location
-  enabled               = each.value.vm_shutdown_schedule.enabled
-  daily_recurrence_time = each.value.vm_shutdown_schedule.time
-  timezone              = each.value.vm_shutdown_schedule.timezone
-
-  notification_settings {
-    enabled = false
-  }
-}
-
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "windows_auto_shutdown" {
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "auto_shutdown" {
   for_each = {
     for entry in local.virtual_machines : entry.vm_name => entry
     if entry.vm_image_source_type == "Windows"
   }
 
-  virtual_machine_id    = azurerm_windows_virtual_machine.vm[each.key].id
-  location              = azurerm_windows_virtual_machine.vm[each.key].location
+  virtual_machine_id    = each.value.vm_image_source_type == "Linux" ? azurerm_linux_virtual_machine.vm[each.key].id : azurerm_windows_virtual_machine.vm[each.key].id
+  location              = azurerm_resource_group.rg[each.value.vm_resource_group_name].location
   enabled               = each.value.vm_shutdown_schedule.enabled
   daily_recurrence_time = each.value.vm_shutdown_schedule.time
   timezone              = each.value.vm_shutdown_schedule.timezone
